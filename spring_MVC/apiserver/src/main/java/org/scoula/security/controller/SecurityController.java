@@ -4,6 +4,7 @@ import java.util.Collection;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.security.account.domain.CustomUser;
 import org.scoula.security.account.domain.MemberVO;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -11,9 +12,10 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-@Slf4j
-@RequestMapping("/security")
+/*@Slf4j
+@RequestMapping("/api/security")
 @Controller
 public class SecurityController {
 
@@ -22,10 +24,10 @@ public class SecurityController {
     log.info("do all can access everybody");
   }
 
-/*  @GetMapping("/member")   // MEMBER 또는 ADMIN 권한 필요
+*//*  @GetMapping("/member")   // MEMBER 또는 ADMIN 권한 필요
   public void doMember() {
     log.info("logined member");
-  }*/
+  }*//*
 
 
   @GetMapping("/member")
@@ -56,10 +58,10 @@ public class SecurityController {
   }
 
 
-/*  @GetMapping("/admin")    // ADMIN 권한만 접근 가능
+*//*  @GetMapping("/admin")    // ADMIN 권한만 접근 가능
   public void doAdmin() {
     log.info("admin only");
-  }*/
+  }*//*
 
   @GetMapping("/login")    // 로그인 요청 매핑
   public void login() {
@@ -71,4 +73,42 @@ public class SecurityController {
     log.info("logout page");
   }
 
+}*/
+
+
+@Slf4j
+@RequestMapping("/api/security")
+@RestController
+public class SecurityController {
+
+  /**
+   * 모든 사용자 접근 가능 (인증 불필요)
+   */
+  @GetMapping("/all") //  /api/security/all
+  public ResponseEntity<String> doAll() {
+    log.info("do all can access everybody");
+    return ResponseEntity.ok("All can access everybody");
+  }
+
+  /**
+   * ROLE_MEMBER 권한 필요
+   */
+  @GetMapping("/member") // /api/security/member
+  public ResponseEntity<String> doMember(Authentication authentication) {
+    UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+    log.info("username = " + userDetails.getUsername());
+    return ResponseEntity.ok(userDetails.getUsername());
+  }
+
+  /**
+   * ROLE_ADMIN 권한 필요
+   */
+  @GetMapping("/admin") //  /api/security/admin
+  public ResponseEntity<MemberVO> doAdmin(
+      @AuthenticationPrincipal CustomUser customUser
+  ) {
+    MemberVO member = customUser.getMember();
+    log.info("username = " + member);
+    return ResponseEntity.ok(member);
+  }
 }

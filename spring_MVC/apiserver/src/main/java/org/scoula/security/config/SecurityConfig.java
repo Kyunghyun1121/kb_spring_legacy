@@ -5,11 +5,16 @@ import java.util.Base64;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mybatis.spring.annotation.MapperScan;
+import org.scoula.security.filter.AuthenticationErrorFilter;
+import org.scoula.security.filter.JwtAuthenticationFilter;
+import org.scoula.security.handler.CustomAccessDeniedHandler;
+import org.scoula.security.handler.CustomAuthenticationEntryPoint;
 import org.scoula.security.handler.JwtUsernamePasswordAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -46,6 +51,16 @@ import org.springframework.web.filter.CorsFilter;
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
   private final UserDetailsService userDetailsService;   // CustomUserDetailsService 주입
+
+  // JWT 인증 필터
+  private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+  // 인증 예외 처리 필터
+  private final AuthenticationErrorFilter authenticationErrorFilter;
+
+  // 401/403 에러 처리 핸들러
+  private final CustomAccessDeniedHandler accessDeniedHandler;
+  private final CustomAuthenticationEntryPoint authenticationEntryPoint;
 
   // 커스텀 인증 필터 추가
   @Autowired
@@ -90,19 +105,36 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     // // 1. 문자 인코딩 필터를 CSRF 필터보다 먼저 실행
     // CSRF 필터보다 앞에 인코딩 필터 추가
     // - CSRF 필터는 Spring Security 환경에서 기본적으로 활성화 되어있음!
-    http.addFilterBefore(encodingFilter(), CsrfFilter.class)
+    http
+        // 문자 인증 필터
+        .addFilterBefore(encodingFilter(), CsrfFilter.class)
+        // 인증 에러 필터
+        .addFilterBefore(authenticationErrorFilter, UsernamePasswordAuthenticationFilter.class)
+        // JWT 인증 필터
+        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+        // API 로그인 인증 필터
+        .addFilterBefore(jwtUsernamePasswordAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
 
-    // API 로그인 인증 필터 추가 (기존 UsernamePasswordAuthenticationFilter 앞에 배치)
-        .addFilterBefore(jwtUsernamePasswordAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
-    // 기존 2,3,4 메서드 제거
+        // 예외 처리 설정
+        .exceptionHandling()
+        .authenticationEntryPoint(authenticationEntryPoint)  // 401 에러 처리
+        .accessDeniedHandler(accessDeniedHandler);           // 403 에러 처리
 
     //  HTTP 보안 설정
-    http.httpBasic().disable()      // 기본 HTTP 인증 비활성화
+    http
+        .httpBasic().disable()      // 기본 HTTP 인증 비활성화
         .csrf().disable()           // CSRF 보호 비활성화 (REST API에서는 불필요)
         .formLogin().disable()      // 폼 로그인 비활성화 (JSON 기반 API 사용)
         .sessionManagement()        // 세션 관리 설정
         .sessionCreationPolicy(SessionCreationPolicy.STATELESS);  // 무상태 모드
+
+    http
+        .authorizeRequests() // 경로별 접근 권한 설정
+        .antMatchers(HttpMethod.OPTIONS).permitAll()  //  org.springframework.http.HttpMethod
+        .antMatchers("/api/security/all").permitAll()                    // 모두 허용
+        .antMatchers("/api/security/member").access("hasRole('ROLE_MEMBER')")  // ROLE_MEMBER 이상
+        .antMatchers("/api/security/admin").access("hasRole('ROLE_ADMIN')")    // ROLE_ADMIN 이상
+        .anyRequest().authenticated(); // 나머지는 로그인 필요
 
   }
 
