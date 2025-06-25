@@ -1,9 +1,11 @@
-package org.scoula.security.handler;
+package org.scoula.security.filter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.scoula.security.account.dto.LoginDTO;
+import org.scoula.security.handler.LoginFailureHandler;
+import org.scoula.security.handler.LoginSuccessHandler;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;

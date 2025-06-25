@@ -1,7 +1,6 @@
 package org.scoula.security.config;
 
 
-import java.util.Base64;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.mybatis.spring.annotation.MapperScan;
@@ -9,7 +8,7 @@ import org.scoula.security.filter.AuthenticationErrorFilter;
 import org.scoula.security.filter.JwtAuthenticationFilter;
 import org.scoula.security.handler.CustomAccessDeniedHandler;
 import org.scoula.security.handler.CustomAuthenticationEntryPoint;
-import org.scoula.security.handler.JwtUsernamePasswordAuthenticationFilter;
+import org.scoula.security.filter.JwtUsernamePasswordAuthenticationFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
